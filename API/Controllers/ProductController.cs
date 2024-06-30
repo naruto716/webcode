@@ -10,16 +10,16 @@ namespace API.Controllers;
 public class ProductController : ControllerBase
 {
     private readonly StoreContext _context;
-    
+
     public ProductController(StoreContext context)
     {
-        this._context = context;
+        _context = context;
     }
 
     [HttpGet]
     public async Task<ActionResult<List<Product>>> getProducts()
     {
-        var products = await this._context.Products.ToListAsync();
+        var products = await _context.Products.ToListAsync();
         return Ok(products);
     }
 

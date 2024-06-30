@@ -13,6 +13,7 @@ builder.Services.AddDbContext<StoreContext>(opt =>
 {
     opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
+builder.Services.AddCors();
 
 var app = builder.Build();
 
@@ -24,6 +25,8 @@ if (app.Environment.IsDevelopment())
 }
 
 // app.UseHttpsRedirection(); // Not for dev
+
+app.UseCors(opt => { opt.AllowAnyHeader().AllowAnyMethod().WithOrigins("http://localhost:3000"); });
 
 app.UseAuthorization();
 
