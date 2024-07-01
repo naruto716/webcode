@@ -6,7 +6,7 @@ export function Catalog() {
     const [products, setProducts] = useState<Product[]>(
         [
             {
-                name: 'product1', price: 100.00,
+                name: 'product0', price: 100.00,
                 id: 0,
                 description: "",
                 currencyCode: "",
@@ -15,7 +15,7 @@ export function Catalog() {
             },
             {
                 name: 'product1', price: 200.00,
-                id: 0,
+                id: 1,
                 description: "",
                 currencyCode: "",
                 imageUrl: "https://i0.wp.com/picjumbo.com/wp-content/uploads/magical-spring-forest-scenery-during-morning-breeze-free-photo.jpg",
