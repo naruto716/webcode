@@ -1,37 +1,23 @@
 import {Product} from "../../app/models/products.ts";
 import ProductList from "./ProductList.tsx";
 import {useEffect, useState} from "react";
+import agent from "../../app/api/agent.ts";
+import LoadingComponent from "../../app/layout/LoadingComponent.tsx";
 
 export function Catalog() {
-    const [products, setProducts] = useState<Product[]>(
-        [
-            {
-                name: 'product0', price: 100.00,
-                id: 0,
-                description: "",
-                currencyCode: "",
-                imageUrl: "https://i0.wp.com/picjumbo.com/wp-content/uploads/magical-spring-forest-scenery-during-morning-breeze-free-photo.jpg",
-                categoryId: 0
-            },
-            {
-                name: 'product1', price: 200.00,
-                id: 1,
-                description: "",
-                currencyCode: "",
-                imageUrl: "https://i0.wp.com/picjumbo.com/wp-content/uploads/magical-spring-forest-scenery-during-morning-breeze-free-photo.jpg",
-                categoryId: 0
-            }
-        ]
-    )
+    const [products, setProducts] = useState<Product[]>([])
+    const [loading, setLoading] = useState(true);
 
     useEffect(
         () => {
-            fetch('http://localhost:5000/api/Product')
-                .then(response => response.json())
-                .then(products => setProducts(products));
+            agent.Catalog.list()
+                .then(products => setProducts(products))
+                .catch(error => console.log(error))
+                .finally(() => setLoading(false));
         }, []
     )
-
+    
+    if (loading) return <LoadingComponent message='Loading products...'/>
 
     return (
         <>

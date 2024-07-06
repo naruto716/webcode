@@ -1,29 +1,75 @@
-import {Divider, Grid, Table, TableBody, TableCell, TableContainer, TableRow, Typography} from "@mui/material";
+import {
+    Divider,
+    Grid,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableRow,
+    TextField,
+    Typography
+} from "@mui/material";
 import {useParams} from "react-router-dom";
 import {Product} from "../../app/models/products.ts";
-import {useEffect, useState} from "react";
-import axios from "axios";
+import {ChangeEvent, useEffect, useState} from "react";
+import agent from "../../app/api/agent.ts";
+import NotFound from "../../app/errors/NotFound.tsx";
+import LoadingComponent from "../../app/layout/LoadingComponent.tsx";
+import {useStoreContext} from "../../app/context/StoreContext.tsx";
+import {LoadingButton} from "@mui/lab";
 
 export default function ProductDetails() {
+    const {basket, setBasket, removeItem} = useStoreContext();
     const {id} = useParams<{id: string}>(); // useParams
     const [product, setProduct] = useState<Product | null>(null); // null for no products explicitly
     const [loading, setLoading] = useState(true);
+    const [quantity, setQuantity] = useState(0);
+    const [submitting, setSubmitting] = useState(false);
+    const item = basket?.items.find(item => product?.id == item.productId);
 
     useEffect(() => {
-        axios.get(`http://localhost:5000/api/Product/${id}`)
-            .then(response => {setProduct(response.data)}) // response.data
+        if (item) 
+            setQuantity(item.quantity);
+        id && agent.Catalog.details(parseInt(id))
+            .then(product => {setProduct(product)})
             .catch(err => console.log(err))
             .finally(() => setLoading(false))
-    }, [id]); // use id for dependency, so it changes each time the id changes
+    }, [id, item]); // use id for dependency, so it changes each time the id changes
     
-    if (loading) return <h3>Loading...</h3>
+    function handleInputChange(event: ChangeEvent<HTMLInputElement>) {
+        const value = parseInt(event.currentTarget.value);
+        if (value >= 0) {
+            setQuantity(value);
+        }
+    }
     
-    if (!product) return <h3>Not found</h3>
+    function handleUpdateCart() {
+        if (!product) return;
+        setSubmitting(true);
+        if (!item || quantity > item.quantity) { // Add items
+            const updatedQuantity = item ? quantity - item.quantity : quantity;
+            agent.Basket.addItem(product.id!, updatedQuantity)
+                .then(basket => setBasket(basket))
+                .catch(error => console.log(error))
+                .finally(() => setSubmitting(false));
+        }
+        else { // Remove items
+            const updatedQuantity = item.quantity - quantity;
+            agent.Basket.removeItem(product.id!, updatedQuantity)
+                .then(() => removeItem(product.id!, updatedQuantity))
+                .catch(error => console.log(error))
+                .finally(() => setSubmitting(false));
+        }
+    }
+    
+    if (loading) return <LoadingComponent message="Loading product..." />
+    
+    if (!product) return <NotFound />
     
     return (
         <Grid container spacing={6}>
             <Grid item xs={6}>
-                <img src={product.imageUrl} alt={product.name} style={{width: '100%'}}/>
+                <img src={product.pictureUrl} alt={product.name} style={{width: '100%'}}/>
             </Grid>
             <Grid item xs={6}>
                 <Typography variant='h3'>
@@ -35,7 +81,7 @@ export default function ProductDetails() {
                 </Typography>
                 <TableContainer>
                     <Table>
-                        <TableBody>
+                        <TableBody sx={{ fontSize: '1.1em' }}>
                             <TableRow>
                                 <TableCell>Name</TableCell>
                                 <TableCell>{product.name}</TableCell>
@@ -45,12 +91,46 @@ export default function ProductDetails() {
                                 <TableCell>{product.description}</TableCell>
                             </TableRow>
                             <TableRow>
-                                <TableCell>Name</TableCell>
-                                <TableCell>{product.name}</TableCell>
+                                <TableCell>Type</TableCell>
+                                <TableCell>{product.type}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell>Brand</TableCell>
+                                <TableCell>{product.brand}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell>Quantity in stock</TableCell>
+                                <TableCell>{product.quantityInStock}</TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
                 </TableContainer>
+                <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                        <TextField 
+                            onChange={handleInputChange}
+                            variant='outlined'
+                            type='number'
+                            label='Quantity in Cart'
+                            fullWidth
+                            value={quantity}
+                        />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <LoadingButton 
+                            disabled={item?.quantity === quantity || !item && quantity === 0}
+                            loading={submitting}
+                            onClick={handleUpdateCart}
+                            sx={{height: '55px'}}
+                            color='primary'
+                            size='large'
+                            variant='contained'
+                            fullWidth
+                        >
+                            {item ? 'Update Quantity' : 'Add to Cart'}
+                        </LoadingButton>
+                    </Grid>
+                </Grid>
             </Grid>
         </Grid>
     )
