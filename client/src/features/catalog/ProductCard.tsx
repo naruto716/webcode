@@ -5,6 +5,8 @@ import {useState} from "react";
 import agent from "../../app/api/agent.ts";
 import {LoadingButton} from "@mui/lab";
 import {currencyFormat} from "../../app/util/util.ts";
+import {useAppDispatch} from "../../app/store/configureStore.ts";
+import {setBasket} from "../basket/basketSlice.ts";
 
 interface props {
     product: Product;
@@ -12,10 +14,12 @@ interface props {
 
 export default function ProductCard({product}: props) {
     const [loading, setLoading] = useState(false);
+    const dispatch = useAppDispatch();
     
     function handleAddItem(productId: number){
         setLoading(true);
         agent.Basket.addItem(productId)
+            .then(basket => dispatch(setBasket(basket)))
             .catch(error=>console.log(error))
             .finally(() => setLoading(false));
     }

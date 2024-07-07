@@ -15,11 +15,13 @@ import {ChangeEvent, useEffect, useState} from "react";
 import agent from "../../app/api/agent.ts";
 import NotFound from "../../app/errors/NotFound.tsx";
 import LoadingComponent from "../../app/layout/LoadingComponent.tsx";
-import {useStoreContext} from "../../app/context/StoreContext.tsx";
 import {LoadingButton} from "@mui/lab";
+import {useAppDispatch, useAppSelector} from "../../app/store/configureStore.ts";
+import {removeItem, setBasket} from "../basket/basketSlice.ts";
 
 export default function ProductDetails() {
-    const {basket, setBasket, removeItem} = useStoreContext();
+    const {basket} = useAppSelector(state => state.basket);
+    const dispatch = useAppDispatch();
     const {id} = useParams<{id: string}>(); // useParams
     const [product, setProduct] = useState<Product | null>(null); // null for no products explicitly
     const [loading, setLoading] = useState(true);
@@ -49,14 +51,14 @@ export default function ProductDetails() {
         if (!item || quantity > item.quantity) { // Add items
             const updatedQuantity = item ? quantity - item.quantity : quantity;
             agent.Basket.addItem(product.id!, updatedQuantity)
-                .then(basket => setBasket(basket))
+                .then(basket => dispatch(setBasket(basket)))
                 .catch(error => console.log(error))
                 .finally(() => setSubmitting(false));
         }
         else { // Remove items
             const updatedQuantity = item.quantity - quantity;
             agent.Basket.removeItem(product.id!, updatedQuantity)
-                .then(() => removeItem(product.id!, updatedQuantity))
+                .then(() => dispatch(removeItem({productId: product?.id!, quantity: updatedQuantity})))
                 .catch(error => console.log(error))
                 .finally(() => setSubmitting(false));
         }
