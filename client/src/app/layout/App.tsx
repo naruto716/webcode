@@ -1,32 +1,33 @@
 import {Container, createTheme, CssBaseline, ThemeProvider} from "@mui/material";
 import Header from "./Header.tsx";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {Outlet} from "react-router-dom";
 import {ToastContainer} from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
-import {getCookie} from "../util/util.ts";
-import agent from "../api/agent.ts";
 import LoadingComponent from "./LoadingComponent.tsx";
 import {useAppDispatch} from "../store/configureStore.ts";
-import {setBasket} from "../../features/basket/basketSlice.ts";
+import {fetchBasketAsync} from "../../features/basket/basketSlice.ts";
+import {fetchCurrentUser} from "../../features/account/accountSlice.ts";
 
 function App() {
     const dispatch = useAppDispatch()
     const [loading, setLoading] = useState(true);
 
+    const initApp = useCallback(async () => {
+            try {
+                await dispatch(fetchCurrentUser())
+                await dispatch((fetchBasketAsync()))
+            } catch (error: any) {
+                console.log(error)
+            }
+        }, [dispatch]
+    )
+
     useEffect(() => {
-        const buyerId = getCookie('buyerId');
-        if (buyerId) {
-            agent.Basket.get()
-                .then(basket => dispatch(setBasket(basket)))
-                .catch(error => console.log(error))
-                .finally(() => setLoading(false))
-        } else {
-            setLoading(false);
-        }
-    }, [setBasket]);
-    
-    const [darkMode, setDarkmode] = useState(false);
+        initApp().then(() => setLoading(false));
+    }, [dispatch]);
+
+    const [darkMode, setDarkMode] = useState(false);
     const paletteType = darkMode ? 'dark' : 'light';
     const theme = createTheme({
         palette: {
@@ -36,20 +37,20 @@ function App() {
             }
         }
     })
-    
+
     function handleThemeChange() {
-        setDarkmode(prevMode => !prevMode)
+        setDarkMode(prevMode => !prevMode)
     }
-    
-    if (loading) return <LoadingComponent message={"Initializing App..."} />
-    
+
+    if (loading) return <LoadingComponent message={"Initializing App..."}/>
+
     return (
         <ThemeProvider theme={theme}>
             <ToastContainer position="bottom-right" hideProgressBar theme="colored"/>
             <CssBaseline/>
             <Header darkMode={darkMode} handleThemeChange={handleThemeChange}/>
             <Container>
-                <Outlet />
+                <Outlet/>
             </Container>
         </ThemeProvider>
     )
