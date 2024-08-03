@@ -15,7 +15,7 @@ import {toast} from "react-toastify";
 export default function Register() {
     const navigate = useNavigate();
     const {register, handleSubmit, setError, formState: {isSubmitting, errors, isValid}} = useForm({
-        mode: 'onTouched'
+        mode: 'onChange'
     });
 
     function handleApiErrors(errors: any) {
